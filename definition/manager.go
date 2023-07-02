@@ -3,7 +3,6 @@ package definition
 import (
 	"context"
 	"net/http"
-	"time"
 )
 
 // TokenGenerateRequest provide to generate the token request parameters
@@ -18,7 +17,6 @@ type TokenGenerateRequest struct {
 	CodeChallengeMethod CodeChallengeMethod
 	Refresh             string
 	CodeVerifier        string
-	AccessTokenExp      time.Duration
 	Request             *http.Request
 }
 
@@ -27,10 +25,15 @@ type Manager interface {
 	// GetClient get the client information
 	GetClient(ctx context.Context, clientID string) (cli ClientInfo, err error)
 
-	// GenerateAuthToken generate the authorization token(code)
-	GenerateAuthToken(ctx context.Context, rt ResponseType, tgr *TokenGenerateRequest) (authToken TokenInfo, err error)
+	// SetCodeAdapter auth code model adapter
+	SetCodeAdapter(adp CodeInfoAdapter)
+	// SetTokenAdapter access token model adapter
+	SetTokenAdapter(adp TokenInfoAdapter)
 
-	// GenerateAccessToken generate the access token
+	// GenerateAuthToken generate the authorization code
+	GenerateAuthToken(ctx context.Context, rt ResponseType, tgr *TokenGenerateRequest) (rb any, err error)
+
+	// GenerateAccessToken generate the access token(authorize token)
 	GenerateAccessToken(ctx context.Context, gt GrantType, tgr *TokenGenerateRequest) (accessToken TokenInfo, err error)
 
 	// RefreshAccessToken refreshing an access token

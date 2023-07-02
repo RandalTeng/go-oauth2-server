@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/RandalTeng/oauth2/definition"
+	"github.com/RandalTeng/go-oauth2-server/definition"
 )
 
 // NewMemoryTokenStore create a token store instance based on memory map
@@ -26,8 +26,19 @@ type MemoryTokenStore struct {
 }
 
 // Create and store the new token information
-func (ts *MemoryTokenStore) Create(_ context.Context, info definition.TokenInfo) error {
-	return ts.set(info.GetAccess(), info)
+func (ts *MemoryTokenStore) Create(_ context.Context, info any) error {
+	var key string
+	if c, ok := info.(definition.CodeInfo); ok {
+		key = c.GetCode()
+	} else if t, ok := info.(definition.TokenInfo); ok {
+		key = t.GetAccess()
+		if rk := t.GetRefresh(); rk != "" {
+			_ = ts.set(rk, t)
+		}
+	} else {
+		return errors.New("`info` type error, unsupported")
+	}
+	return ts.set(key, info)
 }
 
 // get key
@@ -73,14 +84,14 @@ func (ts *MemoryTokenStore) RemoveByRefresh(_ context.Context, refresh string) e
 }
 
 // GetByCode use the authorization code for token information data
-func (ts *MemoryTokenStore) GetByCode(_ context.Context, code string) (definition.TokenInfo, error) {
+func (ts *MemoryTokenStore) GetByCode(_ context.Context, code string) (definition.CodeInfo, error) {
 	value, err := ts.get(code)
 	if err != nil {
 		return nil, err
 	}
-	info, ok := value.(definition.TokenInfo)
+	info, ok := value.(definition.CodeInfo)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("类型错误: %+v", value))
+		return nil, errors.New(fmt.Sprintf("type error, unsupported: %+v", value))
 	} else {
 		return info, nil
 	}
@@ -94,7 +105,7 @@ func (ts *MemoryTokenStore) GetByAccess(_ context.Context, access string) (defin
 	}
 	info, ok := value.(definition.TokenInfo)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("类型错误: %+v", value))
+		return nil, errors.New(fmt.Sprintf("type error, unsupported: %+v", value))
 	} else {
 		return info, nil
 	}
@@ -108,7 +119,7 @@ func (ts *MemoryTokenStore) GetByRefresh(_ context.Context, refresh string) (def
 	}
 	info, ok := value.(definition.TokenInfo)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("类型错误: %+v", value))
+		return nil, errors.New(fmt.Sprintf("type error, unsupported: %+v", value))
 	} else {
 		return info, nil
 	}

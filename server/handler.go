@@ -2,11 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
-	"time"
 
-	"github.com/RandalTeng/oauth2/definition"
-	"github.com/RandalTeng/oauth2/errors"
+	"github.com/RandalTeng/go-oauth2-server/definition"
+	"github.com/RandalTeng/go-oauth2-server/errors"
 )
 
 type (
@@ -43,9 +43,6 @@ type (
 	// AuthorizeScopeHandler set the authorized scope
 	AuthorizeScopeHandler func(w http.ResponseWriter, r *http.Request) (scope string, err error)
 
-	// AccessTokenExpHandler set expiration date for the access token
-	AccessTokenExpHandler func(w http.ResponseWriter, r *http.Request) (exp time.Duration, err error)
-
 	// ExtensionFieldsHandler in response to the access token with the extension of the field
 	ExtensionFieldsHandler func(ti definition.TokenInfo) (fieldsValue map[string]interface{})
 
@@ -53,14 +50,31 @@ type (
 	ResponseTokenHandler func(w http.ResponseWriter, data map[string]interface{}, header http.Header, statusCode ...int) error
 )
 
-// ClientFormHandler get client data from form
-func ClientFormHandler(r *http.Request) (string, string, error) {
-	clientID := r.Form.Get("client_id")
-	if clientID == "" {
-		return "", "", errors.ErrInvalidClient
+// ClientBodyHandler get client data from request body.
+func ClientBodyHandler(r *http.Request) (string, string, error) {
+	switch r.Header.Get("Content-Type") {
+	case "application/json":
+		var decoder *json.Decoder
+		if r.GetBody != nil {
+			bd, _ := r.GetBody()
+			decoder = json.NewDecoder(bd)
+		} else {
+			decoder = json.NewDecoder(r.Body)
+		}
+		client := struct {
+			ClientId     string `json:"client_id"`
+			ClientSecret string `json:"client_secret"`
+		}{}
+		_ = decoder.Decode(&client)
+		return client.ClientId, client.ClientSecret, nil
+	default:
+		clientID := r.Form.Get("client_id")
+		if clientID == "" {
+			return "", "", errors.ErrInvalidClient
+		}
+		clientSecret := r.Form.Get("client_secret")
+		return clientID, clientSecret, nil
 	}
-	clientSecret := r.Form.Get("client_secret")
-	return clientID, clientSecret, nil
 }
 
 // ClientBasicHandler get client data from basic authorization

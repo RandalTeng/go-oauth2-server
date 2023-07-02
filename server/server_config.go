@@ -1,6 +1,6 @@
 package server
 
-import "github.com/RandalTeng/oauth2/definition"
+import "github.com/RandalTeng/go-oauth2-server/definition"
 
 // SetTokenType token type
 func (s *Server) SetTokenType(tokenType string) {
@@ -75,11 +75,6 @@ func (s *Server) SetPreRedirectErrorHandler(handler PreRedirectErrorHandler) {
 // SetExtensionFieldsHandler in response to the access token with the extension of the field
 func (s *Server) SetExtensionFieldsHandler(handler ExtensionFieldsHandler) {
 	s.ExtensionFieldsHandler = handler
-}
-
-// SetAccessTokenExpHandler set expiration date for the access token
-func (s *Server) SetAccessTokenExpHandler(handler AccessTokenExpHandler) {
-	s.AccessTokenExpHandler = handler
 }
 
 // SetAuthorizeScopeHandler set scope for the access token

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/RandalTeng/oauth2/definition"
+	"github.com/RandalTeng/go-oauth2-server/definition"
 )
 
 // NewClientStore create client store

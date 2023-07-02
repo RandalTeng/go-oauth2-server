@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/RandalTeng/oauth2/definition"
-	"github.com/RandalTeng/oauth2/errors"
+	"github.com/RandalTeng/go-oauth2-server/definition"
+	"github.com/RandalTeng/go-oauth2-server/errors"
 )
 
 // NewDefaultServer create a default authorization server
@@ -53,7 +53,6 @@ type Server struct {
 	ResponseErrorHandler         ResponseErrorHandler
 	InternalErrorHandler         InternalErrorHandler
 	ExtensionFieldsHandler       ExtensionFieldsHandler
-	AccessTokenExpHandler        AccessTokenExpHandler
 	AuthorizeScopeHandler        AuthorizeScopeHandler
 	ResponseTokenHandler         ResponseTokenHandler
 }
@@ -210,7 +209,7 @@ func (s *Server) ValidationAuthorizeRequest(r *http.Request) (*AuthorizeRequest,
 }
 
 // GetAuthorizeToken get authorization token(code)
-func (s *Server) GetAuthorizeToken(ctx context.Context, req *AuthorizeRequest) (definition.TokenInfo, error) {
+func (s *Server) GetAuthorizeToken(ctx context.Context, req *AuthorizeRequest) (any, error) {
 	// check the client allows the grant type
 	if fn := s.ClientAuthorizedHandler; fn != nil {
 		gt := definition.AuthorizationCode
@@ -227,12 +226,11 @@ func (s *Server) GetAuthorizeToken(ctx context.Context, req *AuthorizeRequest) (
 	}
 
 	tgr := &definition.TokenGenerateRequest{
-		ClientID:       req.ClientID,
-		UserID:         req.UserID,
-		RedirectURI:    req.RedirectURI,
-		Scope:          req.Scope,
-		AccessTokenExp: req.AccessTokenExp,
-		Request:        req.Request,
+		ClientID:    req.ClientID,
+		UserID:      req.UserID,
+		RedirectURI: req.RedirectURI,
+		Scope:       req.Scope,
+		Request:     req.Request,
 	}
 
 	// check the client allows the authorized scope
@@ -252,13 +250,16 @@ func (s *Server) GetAuthorizeToken(ctx context.Context, req *AuthorizeRequest) (
 }
 
 // GetAuthorizeData get authorization response data
-func (s *Server) GetAuthorizeData(rt definition.ResponseType, ti definition.CodeInfo) map[string]interface{} {
-	if rt == definition.Code {
+func (s *Server) GetAuthorizeData(rt definition.ResponseType, ti any) map[string]interface{} {
+	if t, ok := ti.(definition.TokenInfo); ok && rt == definition.Token {
+		return s.GetTokenData(t)
+	} else if c, ok := ti.(definition.CodeInfo); ok {
 		return map[string]interface{}{
-			"code": ti.GetCode(),
+			"code": c.GetCode(),
 		}
+	} else {
+		return map[string]interface{}{}
 	}
-	return s.GetTokenData(ti)
 }
 
 // HandleAuthorizeRequest the authorization request handling
@@ -287,15 +288,6 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 		} else if scope != "" {
 			req.Scope = scope
 		}
-	}
-
-	// specify the expiration time of access token
-	if fn := s.AccessTokenExpHandler; fn != nil {
-		exp, err := fn(w, r)
-		if err != nil {
-			return err
-		}
-		req.AccessTokenExp = exp
 	}
 
 	ti, err := s.GetAuthorizeToken(ctx, req)
@@ -387,8 +379,11 @@ func (s *Server) CheckGrantType(gt definition.GrantType) bool {
 }
 
 // GetAccessToken access token
-func (s *Server) GetAccessToken(ctx context.Context, gt definition.GrantType, tgr *definition.TokenGenerateRequest) (definition.TokenInfo,
-	error) {
+func (s *Server) GetAccessToken(
+	ctx context.Context,
+	gt definition.GrantType,
+	tgr *definition.TokenGenerateRequest,
+) (definition.TokenInfo, error) {
 	if allowed := s.CheckGrantType(gt); !allowed {
 		return nil, errors.ErrUnauthorizedClient
 	}
@@ -475,11 +470,11 @@ func (s *Server) GetAccessToken(ctx context.Context, gt definition.GrantType, tg
 }
 
 // GetTokenData token data
-func (s *Server) GetTokenData(ti definition.CodeInfo) map[string]interface{} {
+func (s *Server) GetTokenData(ti definition.TokenInfo) map[string]interface{} {
 	data := map[string]interface{}{
 		"access_token": ti.GetAccess(),
 		"token_type":   s.Config.TokenType,
-		"expires_in":   int64(ti.GetAccessExpiresIn() / time.Second),
+		"expires_in":   ti.GetExpiredAt().Sub(time.Now()).Seconds(),
 	}
 
 	if scope := ti.GetScope(); scope != "" {

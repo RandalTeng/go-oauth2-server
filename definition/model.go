@@ -19,7 +19,7 @@ type (
 
 	// CodeInfo the authorization code information model interface
 	CodeInfo interface {
-		New() CodeInfo
+		CodeInfoAdapter
 
 		GetClientID() string
 		SetClientID(string)
@@ -31,20 +31,21 @@ type (
 		SetScope(string)
 
 		GetCode() string
+		// SetCode code should be a random string that 32 length size, seem like a string id.
 		SetCode(string)
-		GetCodeCreateAt() time.Time
-		SetCodeCreateAt(time.Time)
-		GetCodeExpiresIn() time.Duration
-		SetCodeExpiresIn(time.Duration)
-		GetCodeChallenge() string
-		SetCodeChallenge(string)
-		GetCodeChallengeMethod() CodeChallengeMethod
-		SetCodeChallengeMethod(CodeChallengeMethod)
+		GetChallenge() string
+		SetChallenge(string)
+		GetChallengeMethod() CodeChallengeMethod
+		SetChallengeMethod(CodeChallengeMethod)
+		GetExpiredAt() time.Time
+		SetExpiredAt(time.Time)
+		// CreatedAt is optional, will not force package user set created at.
+		// Revoked is optional, will not force package user delete some auth code hard.
 	}
 
 	// TokenInfo the access token information model interface
 	TokenInfo interface {
-		New() TokenInfo
+		TokenInfoAdapter
 
 		GetClientID() string
 		SetClientID(string)
@@ -54,22 +55,26 @@ type (
 		SetScope(string)
 
 		GetAccess() string
+		// SetAccess access should be a random string that 32 length size, seem like a string id.
 		SetAccess(string)
-		GetAccessCreateAt() time.Time
-		SetAccessCreateAt(time.Time)
-		GetAccessExpiresIn() time.Duration
-		SetAccessExpiresIn(time.Duration)
+		GetAccessIdentifier() string
+		SetAccessIdentifier(string)
+		GetExpiredAt() time.Time
+		SetExpiredAt(time.Time)
+		GetRefresh() string
+		// SetRefresh refresh should be a random string that 32 length size, seem like a string id.
+		SetRefresh(string)
+		GetRefreshExpiredAt() time.Time
+		SetRefreshExpiredAt(time.Time)
+		// CreatedAt is optional, will not force package user set created at.
+		// Revoked is optional, will not force package user delete some auth code hard.
 	}
 
-	// RefreshInfo the refresh token information model interface
-	RefreshInfo interface {
-		New() RefreshInfo
+	CodeInfoAdapter interface {
+		New() CodeInfo
+	}
 
-		GetRefresh() string
-		SetRefresh(string)
-		GetRefreshCreateAt() time.Time
-		SetRefreshCreateAt(time.Time)
-		GetRefreshExpiresIn() time.Duration
-		SetRefreshExpiresIn(time.Duration)
+	TokenInfoAdapter interface {
+		New() TokenInfo
 	}
 )

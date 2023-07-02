@@ -11,8 +11,9 @@ type (
 
 	// TokenStore the token information storage interface
 	TokenStore interface {
-		// Create and store the new token information
-		Create(ctx context.Context, info TokenInfo) error
+		// Create and store the new token information,
+		// info must be one of CodeInfo, TokenInfo, RefreshInfo
+		Create(ctx context.Context, info any) error
 
 		// RemoveByCode delete the authorization code
 		RemoveByCode(ctx context.Context, code string) error
@@ -24,7 +25,7 @@ type (
 		RemoveByRefresh(ctx context.Context, refresh string) error
 
 		// GetByCode use the authorization code for token information data
-		GetByCode(ctx context.Context, code string) (TokenInfo, error)
+		GetByCode(ctx context.Context, code string) (CodeInfo, error)
 
 		// GetByAccess use the access token for token information data
 		GetByAccess(ctx context.Context, access string) (TokenInfo, error)

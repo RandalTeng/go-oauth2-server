@@ -1,3 +1,3 @@
-module github.com/RandalTeng/oauth2/definition
+module github.com/RandalTeng/go-oauth2-server/definition
 
 go 1.19

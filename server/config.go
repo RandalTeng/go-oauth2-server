@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/RandalTeng/oauth2/definition"
+	"github.com/RandalTeng/go-oauth2-server/definition"
 )
 
 // Config configuration parameters
