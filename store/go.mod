@@ -1,4 +1,4 @@
-module github.com/RandalTeng/oauth2/store
+module github.com/RandalTeng/go-oauth2-server/store
 
 go 1.19
 
