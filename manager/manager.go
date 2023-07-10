@@ -7,7 +7,6 @@ import (
 	"github.com/RandalTeng/go-oauth2-server/definition"
 	"github.com/RandalTeng/go-oauth2-server/errors"
 	"github.com/RandalTeng/go-oauth2-server/generator"
-	"github.com/RandalTeng/go-oauth2-server/models"
 )
 
 // NewDefaultManager create to default authorization management instance
@@ -16,8 +15,6 @@ func NewDefaultManager() *Manager {
 	// default implementation
 	m.MapAuthorizeGenerate(generator.NewAuthorizeGenerate())
 	m.MapAccessGenerate(generator.NewAccessGenerate())
-	m.SetCodeAdapter(models.NewCode())
-	m.SetTokenAdapter(models.NewToken())
 
 	return m
 }
@@ -198,10 +195,11 @@ func (m *Manager) GenerateAuthToken(ctx context.Context, rt definition.ResponseT
 	var info any
 	createAt := time.Now()
 	td := &definition.GenerateBasic{
-		Client:   cli,
-		UserID:   tgr.UserID,
-		CreateAt: createAt,
-		Request:  tgr.Request,
+		Client:    cli,
+		UserID:    tgr.UserID,
+		Scope:     tgr.Scope,
+		CreatedAt: createAt,
+		Request:   tgr.Request,
 	}
 	switch rt {
 	case definition.Code:
@@ -212,6 +210,7 @@ func (m *Manager) GenerateAuthToken(ctx context.Context, rt definition.ResponseT
 		ci.SetRedirectURI(tgr.RedirectURI)
 		ci.SetScope(tgr.Scope)
 		ci.SetExpiredAt(createAt.Add(DefaultCodeExp))
+		td.ExpiredAt = ci.GetExpiredAt()
 		if tgr.CodeChallenge != "" {
 			ci.SetChallenge(tgr.CodeChallenge)
 			ci.SetChallengeMethod(tgr.CodeChallengeMethod)
@@ -230,6 +229,7 @@ func (m *Manager) GenerateAuthToken(ctx context.Context, rt definition.ResponseT
 		ti.SetUserID(tgr.UserID)
 		icfg := m.grantConfig(definition.Implicit)
 		ti.SetExpiredAt(createAt.Add(icfg.AccessTokenExp))
+		td.ExpiredAt = ti.GetExpiredAt()
 
 		body, err := m.accessGenerate.Token(ctx, td, icfg.IsGenerateRefresh)
 		if err != nil {
@@ -339,9 +339,10 @@ func (m *Manager) GenerateAccessToken(ctx context.Context, gt definition.GrantTy
 	gcfg := m.grantConfig(gt)
 	createAt := time.Now()
 	td := &definition.GenerateBasic{
-		Client:   cli,
-		UserID:   tgr.UserID,
-		CreateAt: createAt,
+		Client:    cli,
+		UserID:    tgr.UserID,
+		Scope:     tgr.Scope,
+		CreatedAt: createAt,
 	}
 	body, err := m.accessGenerate.Token(ctx, td, gcfg.IsGenerateRefresh)
 	if err != nil {
@@ -353,6 +354,9 @@ func (m *Manager) GenerateAccessToken(ctx context.Context, gt definition.GrantTy
 	ti.SetUserID(tgr.UserID)
 	ti.SetScope(tgr.Scope)
 	ti.SetExpiredAt(createAt.Add(gcfg.AccessTokenExp))
+	td.ExpiredAt = ti.GetExpiredAt()
+	ti.SetAccess(body.Access)
+	ti.SetAccessIdentifier(body.AccessIdentifier)
 	if gcfg.IsGenerateRefresh && body.Refresh != "" {
 		ti.SetRefresh(body.Refresh)
 		ti.SetRefreshExpiredAt(createAt.Add(gcfg.RefreshTokenExp))
@@ -383,8 +387,8 @@ func (m *Manager) RefreshAccessToken(ctx context.Context, tgr *definition.TokenG
 	td := &definition.GenerateBasic{
 		Client:    cli,
 		UserID:    ti.GetUserID(),
-		CreateAt:  time.Now(),
-		TokenInfo: ti,
+		Scope:     ti.GetScope(),
+		CreatedAt: time.Now(),
 		Request:   tgr.Request,
 	}
 
@@ -395,12 +399,14 @@ func (m *Manager) RefreshAccessToken(ctx context.Context, tgr *definition.TokenG
 
 	if rcfg.AccessTokenExp > 0 {
 		ti.SetExpiredAt(time.Now().Add(rcfg.AccessTokenExp))
+		td.ExpiredAt = ti.GetExpiredAt()
 	}
 	if rcfg.IsResetRefreshTime && rcfg.RefreshTokenExp > 0 {
 		ti.SetRefreshExpiredAt(time.Now().Add(rcfg.RefreshTokenExp))
 	}
 
 	if scope := tgr.Scope; scope != "" {
+		td.Scope = scope
 		ti.SetScope(scope)
 	}
 

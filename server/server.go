@@ -474,7 +474,7 @@ func (s *Server) GetTokenData(ti definition.TokenInfo) map[string]interface{} {
 	data := map[string]interface{}{
 		"access_token": ti.GetAccess(),
 		"token_type":   s.Config.TokenType,
-		"expires_in":   ti.GetExpiredAt().Sub(time.Now()).Seconds(),
+		"expires_in":   int(ti.GetExpiredAt().Sub(time.Now()).Seconds()),
 	}
 
 	if scope := ti.GetScope(); scope != "" {

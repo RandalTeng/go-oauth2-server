@@ -21,13 +21,14 @@ type AccessGenerate struct {
 }
 
 // Token based on the UUID generated token
-func (ag *AccessGenerate) Token(ctx context.Context, data *definition.GenerateBasic, isGenRefresh bool) (body definition.GenerateTokenBody, err error) {
+func (ag *AccessGenerate) Token(_ context.Context, data *definition.GenerateBasic, isGenRefresh bool) (body definition.GenerateTokenBody, err error) {
 	buf := bytes.NewBufferString(data.Client.GetID())
 	buf.WriteString(data.UserID)
-	buf.WriteString(strconv.FormatInt(data.CreateAt.UnixNano(), 10))
+	buf.WriteString(strconv.FormatInt(data.CreatedAt.UnixNano(), 10))
 
 	access := base64.URLEncoding.EncodeToString([]byte(uuid.NewMD5(uuid.Must(uuid.NewRandom()), buf.Bytes()).String()))
 	body.Access = strings.ToUpper(strings.TrimRight(access, "="))
+	body.AccessIdentifier = body.Access
 	if isGenRefresh {
 		refresh := base64.URLEncoding.EncodeToString([]byte(uuid.NewSHA1(uuid.Must(uuid.NewRandom()), buf.Bytes()).String()))
 		body.Refresh = strings.ToUpper(strings.TrimRight(refresh, "="))

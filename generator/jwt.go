@@ -33,15 +33,15 @@ type JWTAccessGenerate struct {
 }
 
 // Token based on the UUID generated token
-func (a *JWTAccessGenerate) Token(ctx context.Context, data *definition.GenerateBasic, isGenRefresh bool) (body definition.GenerateTokenBody, err error) {
+func (a *JWTAccessGenerate) Token(_ context.Context, data *definition.GenerateBasic, isGenRefresh bool) (body definition.GenerateTokenBody, err error) {
 	body.AccessIdentifier = uuidString()
 	claims := &JWTAccessClaims{
-		Scope: data.TokenInfo.GetScope(),
+		Scope: data.Scope,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        body.AccessIdentifier,
 			Audience:  jwt.ClaimStrings{data.Client.GetID()},
 			Subject:   data.UserID,
-			ExpiresAt: jwt.NewNumericDate(data.TokenInfo.GetExpiredAt()),
+			ExpiresAt: jwt.NewNumericDate(data.ExpiredAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}

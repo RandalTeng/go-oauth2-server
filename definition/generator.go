@@ -11,15 +11,15 @@ type (
 	GenerateBasic struct {
 		Client    ClientInfo
 		UserID    string
-		CreateAt  time.Time
-		TokenInfo TokenInfo
+		Scope     string
+		CreatedAt time.Time
+		ExpiredAt time.Time
 		Request   *http.Request
 	}
 
 	// GenerateTokenBody generator's result, if there is a AccessIdentifier (which is set for jwt,
 	// the result token is too large), you can just save the identifier to storage
 	GenerateTokenBody struct {
-		Code             string
 		Access           string
 		AccessIdentifier string
 		Refresh          string

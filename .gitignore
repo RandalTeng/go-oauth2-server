@@ -26,6 +26,9 @@
 # Go workspace file
 go.work
 
+# build directory
+build
+
 ### macOS template
 # General
 .DS_Store
