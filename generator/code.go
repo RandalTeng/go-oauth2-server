@@ -19,7 +19,7 @@ func NewAuthorizeGenerate() *AuthorizeGenerate {
 type AuthorizeGenerate struct{}
 
 // Token based on the UUID generated token
-func (ag *AuthorizeGenerate) Token(ctx context.Context, data *definition.GenerateBasic) (string, error) {
+func (ag *AuthorizeGenerate) Token(_ context.Context, data *definition.GenerateBasic) (string, error) {
 	buf := bytes.NewBufferString(data.Client.GetID())
 	buf.WriteString(data.UserID)
 	token := uuid.NewMD5(uuid.Must(uuid.NewRandom()), buf.Bytes())

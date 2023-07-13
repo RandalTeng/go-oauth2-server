@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/RandalTeng/go-oauth2-server/definition"
@@ -23,6 +24,7 @@ func NewDefaultManager() *Manager {
 func NewManager() *Manager {
 	return &Manager{
 		gtcfg:       make(map[definition.GrantType]*Config),
+		gtCfgLock:   &sync.RWMutex{},
 		validateURI: DefaultValidateURI,
 	}
 }
@@ -31,6 +33,7 @@ func NewManager() *Manager {
 type Manager struct {
 	codeExp           time.Duration
 	gtcfg             map[definition.GrantType]*Config
+	gtCfgLock         *sync.RWMutex // this lock is unnecessary, but lock it anyway, for some illegal usage.
 	rcfg              *RefreshingConfig
 	validateURI       ValidateURIHandler
 	authorizeGenerate definition.AuthorizeGenerate
@@ -45,6 +48,8 @@ type Manager struct {
 
 // get grant type config
 func (m *Manager) grantConfig(gt definition.GrantType) *Config {
+	m.gtCfgLock.RLock()
+	defer m.gtCfgLock.RUnlock()
 	if c, ok := m.gtcfg[gt]; ok && c != nil {
 		return c
 	}
@@ -66,24 +71,11 @@ func (m *Manager) SetAuthorizeCodeExp(exp time.Duration) {
 	m.codeExp = exp
 }
 
-// SetAuthorizeCodeTokenCfg set the authorization code grant token config
-func (m *Manager) SetAuthorizeCodeTokenCfg(cfg *Config) {
-	m.gtcfg[definition.AuthorizationCode] = cfg
-}
-
-// SetImplicitTokenCfg set the implicit grant token config
-func (m *Manager) SetImplicitTokenCfg(cfg *Config) {
-	m.gtcfg[definition.Implicit] = cfg
-}
-
-// SetPasswordTokenCfg set the password grant token config
-func (m *Manager) SetPasswordTokenCfg(cfg *Config) {
-	m.gtcfg[definition.PasswordCredentials] = cfg
-}
-
-// SetClientTokenCfg set the client grant token config
-func (m *Manager) SetClientTokenCfg(cfg *Config) {
-	m.gtcfg[definition.ClientCredentials] = cfg
+// SetTokenCfgWithType set the authorization code grant token config
+func (m *Manager) SetTokenCfgWithType(gt definition.GrantType, cfg *Config) {
+	m.gtCfgLock.Lock()
+	defer m.gtCfgLock.Unlock()
+	m.gtcfg[gt] = cfg
 }
 
 // SetRefreshTokenCfg set the refreshing token config

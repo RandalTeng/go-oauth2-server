@@ -10,7 +10,7 @@ import (
 )
 
 // NewMemoryTokenStore create a token store instance based on memory map
-func NewMemoryTokenStore(cap int) definition.TokenStore {
+func NewMemoryTokenStore(cap int) *MemoryTokenStore {
 	return &MemoryTokenStore{
 		db:   make(map[string]any),
 		lock: &sync.RWMutex{},
