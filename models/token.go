@@ -14,14 +14,15 @@ func NewToken() *Token {
 // Token token model
 type Token struct {
 	ClientID         string
-	TokenType        string
 	UserID           string
 	Scope            string
 	Access           string
 	AccessIdentifier string
+	Revoked          bool
 	ExpiredAt        time.Time
 	Refresh          string
 	RefreshExpiredAt time.Time
+	RefreshRevoked   bool
 }
 
 // New create to token model instance

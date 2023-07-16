@@ -195,6 +195,9 @@ func (m *Manager) GenerateAuthToken(ctx context.Context, rt definition.ResponseT
 	}
 	switch rt {
 	case definition.Code:
+		if m.code == nil {
+			return nil, errors.New("There is no code adapter, generate authorize code failure.")
+		}
 		// first step, generate auth code.
 		ci := m.code.New()
 		ci.SetClientID(tgr.ClientID)
@@ -215,6 +218,9 @@ func (m *Manager) GenerateAuthToken(ctx context.Context, rt definition.ResponseT
 		ci.SetCode(tv)
 		info = ci
 	case definition.Token:
+		if m.token == nil {
+			return nil, errors.New("There is no token adapter, generate access token failure.")
+		}
 		// second step, generate access token.
 		ti := m.token.New()
 		ti.SetClientID(tgr.ClientID)
